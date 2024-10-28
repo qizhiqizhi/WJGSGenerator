@@ -9,16 +9,19 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "gsgenerator.helloWorld",
-        "title": "Hello World"
-      }
-    ]
-  },
+
+
+"contributes": {
+        "commands": [{
+            "command": "extension.generateGetterSetter",
+            "title": "GSGenerate"
+        }]
+    },
+
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
