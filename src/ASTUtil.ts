@@ -9,7 +9,7 @@ enum MemberTypeEnum {
   CLASS
 }
 interface BaseInfo {
-  memberType: MemberTypeEnum, startRow: number, name: string
+  memberType: MemberTypeEnum, startRow: number,endRow: number, name: string
 }
 interface ClassInfo extends BaseInfo {
   isAbstract: boolean
@@ -89,66 +89,133 @@ export class ASTUtil {
   /**
    * 收集成员信息
    */
+  // public static collectMemberInfo(node: ts.Node): void {
+  //   // 获取方法开始所在行
+  //   const startRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getStart()).line + 1
+  //   // 若节点是类声明
+  //   if (ts.isClassDeclaration(node)) {
+  //     if (!node.name) return
+  //     // 获取类名
+  //     const className = node.name.getText();
+  //     // 是否抽象类
+  //     const isAbstract = node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword) || false;
+  //     // 记录类信息
+  //     ASTUtil.memberInfos.classes.push({ memberType: MemberTypeEnum.CLASS, startRow, name: className, isAbstract })
+  //   }
+  //   // 方法声明
+  //   if (ts.isMethodDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isConstructorDeclaration(node)) {
+  //     if (!node.name) return
+
+
+  //     // 方法名
+  //     const methodName = node.name.getText();
+  //     // 方法参数
+  //     const parameters = node.parameters.map(param => {
+  //       let key = param.name.getText()
+  //       let value = param.type?.getText() || ''
+  //       let paramMap = new Map<string, string>()
+  //       paramMap.set(key, value)
+  //       return paramMap
+  //     });
+  //     // 方法返回值类型
+  //     const returnType = node.type?.getText() || 'null'
+  //     // 方法抛出的异常
+  //     let throwError = ''
+  //     // 遍历方法体获取异常
+  //     const methodBody = node.body
+  //     if (methodBody) {
+  //       ts.forEachChild(methodBody, childNode => {
+  //         if (ts.isThrowStatement(childNode)) {
+  //           const thrownExpression = childNode.expression;
+  //           if (ts.isLiteralExpression(thrownExpression)) {
+  //             throwError = thrownExpression.getText()
+  //           } else if (ts.isNewExpression(thrownExpression)) {
+  //             throwError = thrownExpression.expression.getText()
+  //           }
+  //         }
+  //       });
+  //     }
+  //     // 收集方法信息
+  //     ASTUtil.memberInfos.methods.push({ memberType: MemberTypeEnum.METHOD, startRow, name: methodName, parameters, returnType, throwError })
+  //   }
+  //   // 属性声明
+  //   if (ts.isPropertyDeclaration(node)) {
+  //     if (!node.name) return
+  //     // 属性名
+  //     const propertyName = node.name.getText();
+  //     // 属性类型
+  //     const propertyType = node.type?.getText();
+  //     // 收集属性
+  //     ASTUtil.memberInfos.properties.push({ memberType: MemberTypeEnum.PROP, startRow, name: propertyName, propertyType });
+  //   }
+  //   // 递归遍历子节点  
+  //   ts.forEachChild(node, ASTUtil.collectMemberInfo);
+  // }
   public static collectMemberInfo(node: ts.Node): void {
-    // 获取方法开始所在行
-    const startRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getStart()).line + 1
     // 若节点是类声明
     if (ts.isClassDeclaration(node)) {
-      if (!node.name) return
+      if (!node.name) return;
       // 获取类名
       const className = node.name.getText();
       // 是否抽象类
       const isAbstract = node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword) || false;
+      // 获取类开始和结束所在行
+      const startRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+      const endRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getEnd()).line + 1;
       // 记录类信息
-      ASTUtil.memberInfos.classes.push({ memberType: MemberTypeEnum.CLASS, startRow, name: className, isAbstract })
+      ASTUtil.memberInfos.classes.push({ memberType: MemberTypeEnum.CLASS, startRow, endRow, name: className, isAbstract });
     }
     // 方法声明
     if (ts.isMethodDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isConstructorDeclaration(node)) {
-      if (!node.name) return
-
-
+      if (!node.name) return;
       // 方法名
       const methodName = node.name.getText();
       // 方法参数
       const parameters = node.parameters.map(param => {
-        let key = param.name.getText()
-        let value = param.type?.getText() || ''
-        let paramMap = new Map<string, string>()
-        paramMap.set(key, value)
-        return paramMap
+        let key = param.name.getText();
+        let value = param.type?.getText() || '';
+        let paramMap = new Map<string, string>();
+        paramMap.set(key, value);
+        return paramMap;
       });
       // 方法返回值类型
-      const returnType = node.type?.getText() || 'null'
+      const returnType = node.type?.getText() || 'null';
       // 方法抛出的异常
-      let throwError = ''
+      let throwError = '';
       // 遍历方法体获取异常
-      const methodBody = node.body
+      const methodBody = node.body;
       if (methodBody) {
         ts.forEachChild(methodBody, childNode => {
           if (ts.isThrowStatement(childNode)) {
             const thrownExpression = childNode.expression;
             if (ts.isLiteralExpression(thrownExpression)) {
-              throwError = thrownExpression.getText()
+              throwError = thrownExpression.getText();
             } else if (ts.isNewExpression(thrownExpression)) {
-              throwError = thrownExpression.expression.getText()
+              throwError = thrownExpression.expression.getText();
             }
           }
         });
       }
+      // 获取方法开始和结束所在行
+      const startRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+      const endRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getEnd()).line + 1;
       // 收集方法信息
-      ASTUtil.memberInfos.methods.push({ memberType: MemberTypeEnum.METHOD, startRow, name: methodName, parameters, returnType, throwError })
+      ASTUtil.memberInfos.methods.push({ memberType: MemberTypeEnum.METHOD, startRow, endRow, name: methodName, parameters, returnType, throwError });
     }
     // 属性声明
     if (ts.isPropertyDeclaration(node)) {
-      if (!node.name) return
+      if (!node.name) return;
       // 属性名
       const propertyName = node.name.getText();
       // 属性类型
       const propertyType = node.type?.getText();
+      // 获取属性开始和结束所在行
+      const startRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+      const endRow = ASTUtil.tsFileAST.getLineAndCharacterOfPosition(node.getEnd()).line + 1;
       // 收集属性
-      ASTUtil.memberInfos.properties.push({ memberType: MemberTypeEnum.PROP, startRow, name: propertyName, propertyType });
+      ASTUtil.memberInfos.properties.push({ memberType: MemberTypeEnum.PROP, startRow, endRow, name: propertyName, propertyType });
     }
-    // 递归遍历子节点  
+    // 递归遍历子节点
     ts.forEachChild(node, ASTUtil.collectMemberInfo);
   }
 }

@@ -16,7 +16,27 @@ function getTypeFromComment(lineText: string): string | null {
 function isTypeScriptDocument(document: vscode.TextDocument): boolean {  
     return document.languageId === 'typescript';  
 }
-
+function getClassposition(document:vscode.TextDocument, selection: vscode.Selection): number {
+    const selectedText = document.getText(selection);
+    //除前后空白
+    const propertyName = selectedText.trim();
+    const matchedProperty = ASTUtil.memberInfos.properties.find(propertyInfo => propertyInfo.name === propertyName);
+    if (matchedProperty) {
+        // 查找包含该属性的类的结束行号
+        const classEndRow = ASTUtil.memberInfos.classes.reduce((prevEndRow, classInfo) => {
+          if (matchedProperty.startRow >= classInfo.startRow && matchedProperty.startRow <= classInfo.endRow) {
+            return classInfo.endRow;
+          }
+          // 否则返回之前找到的最大行号
+          return prevEndRow;
+        }, -1);  
+        if (classEndRow !== -1) {
+          return classEndRow;
+        }
+        else return -1;
+      }
+      else return -1;
+}
 function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, selection: vscode.Selection): string {
     const selectedText = document.getText(selection);
     const propertyName = selectedText.trim();
@@ -36,7 +56,7 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
                 this.${propertyName} = value;  
             }  
         `;  
-    } else { // 假设是JavaScript文件（这里省略了类型注解，因为JavaScript是动态类型语言）  
+    } else { 
         getterSetter = `  
             get get${camelCasePropertyName}() {  
                 return this.${propertyName};  
@@ -60,6 +80,7 @@ function getMemberName(document: vscode.TextDocument, selection: vscode.Selectio
     const propertyName = selectedText.trim();
     return propertyName;
 }
+
 function GSGenerateCommand() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -74,25 +95,30 @@ function GSGenerateCommand() {
         vscode.window.showErrorMessage('No selection. Please select a property name.');
         return;
     }
-    // 获取当前行的文本  
+  
     const currentLineText = document.lineAt(selection.end.line).text;  
     // 获取当前行的缩进级别  
     const indentation = getIndentationLevel(currentLineText);
-    //获取方法、属性等等
     const MemberName = getMemberName(document, selection)
     ASTUtil.getMemberInfo(editor.document.fileName,MemberName)
-    const getterSetterCode = GSGgenerat(editor, document, selection).replace(/^\s*/gm, indentation);
-
+    const getSetCode = GSGgenerat(editor, document, selection).replace(/^\s*/gm, indentation);
+    const memberInfo = ASTUtil.getMemberInfo(editor.document.fileName, MemberName);
+    console.log(ASTUtil.memberInfos.classes);
+    
+    if (!memberInfo) {
+        vscode.window.showErrorMessage('Member not found.');
+        return;
+    }
     editor.edit(editBuilder => {
-
-        let endPosition = selection.end;
-        let positionAfterLine = new vscode.Position(endPosition.line + 1, 0);
-        editBuilder.insert(positionAfterLine, `\n${getterSetterCode}\n`);
+        const popision = getClassposition(document, selection);
+        const positionAfterClass = new vscode.Position(popision - 1, 0);
+        editBuilder.insert(positionAfterClass, `\n${getSetCode}\n`);
     }).then(success => {
         if (!success) {
             vscode.window.showErrorMessage('Failed to insert getter and setter methods.');
         }
     });
+    
     
 }
 // 激活函数

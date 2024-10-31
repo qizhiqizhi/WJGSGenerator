@@ -1,71 +1,20 @@
-# gsgenerator README
+10.18
+阅读vscode插件开发文档，安装脚手架，搭建项目结构，尝试通过插件生成hello word
+尝试通过插件对选中内容进行大小写转化
+10.23
+基本实现最初版本的编写，实现最基础的选中属性生成对应ts的set、get代码，将函数代码插入在属性的下一行
+问题：插入位置不规范
+遗留问题：如果属性和类型之间有换行，生成类型为空
+10.28
+在代码中加入js对应的生成代码
+问题1：如果用户从constructor中选中内容插入，那么插入属性的下一行就会报错
+问题2：插入位置难以确定，无法获得文件内容信息确定插入位置
+10.29
+使用AST语法树拿到文件中所有类、方法、属性的位置，尝试将函数插入选中属性所在的下一个方法后
+问题：需要对方法所在类进行判断，同时还要对属性所在位置进行判断
+10.31
+将set和get函数插入所属类的最后，避免位置不对而报错，同时还可以减少对方法所在类进行判断的过程
+问题：如果已经存在函数生成代码，那么仍然再次生成，产生错误信息
 
-This is the README for your extension "gsgenerator". After writing up a brief description, we recommend including the following sections.
 
-## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
