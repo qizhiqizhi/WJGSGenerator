@@ -69,7 +69,6 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
     }  
     return getterSetter;
 }
-
 function getIndentationLevel(lineText:string) {  
     // 匹配前导空格或制表符  
     const match = lineText.match(/^([\s\t]*)/);  
@@ -87,7 +86,6 @@ function GSGenerateCommand() {
         vscode.window.showErrorMessage('No editor is active.');
         return;
     }
-
     const document = editor.document;
     const selection = editor.selection;
 
