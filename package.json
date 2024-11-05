@@ -19,7 +19,15 @@
         "command": "extension.generateGetterSetter",
         "title": "GSGenerate"
       }
-    ]
+    ],
+    "keybindings": [
+        {
+          "command": "extension.generateGetterSetter",
+          "key": "ctrl+alt+\\",
+          "mac": "cmd+\\",
+          "when": "editorTextFocus"
+        }
+      ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
