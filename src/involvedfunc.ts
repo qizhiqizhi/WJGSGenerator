@@ -26,4 +26,4 @@ function getAccessModifier(lineText: string): string | null{
     const match = lineText.match(modifierRegex);
     return match ? match[0] : null;
 }
-export {capitalizeFirstLetter, getTypeFromComment, isTypeScript, getIndentationLevel, getMemberName, getAccessModifier}
+export {capitalizeFirstLetter, getTypeFromComment, isTypeScript, getIndentationLevel, getMemberName,getAccessModifier }

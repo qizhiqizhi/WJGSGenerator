@@ -18,13 +18,23 @@
       {
         "command": "extension.generateGetterSetter",
         "title": "GSGenerate"
+      },
+      {
+        "command": "extension.generateGetterSetterForAll",
+        "title": "GSGenerateAll"
       }
     ],
     "keybindings": [
         {
           "command": "extension.generateGetterSetter",
-          "key": "ctrl+alt+\\",
-          "mac": "cmd+\\",
+          "key": "ctrl+win+shift+s",
+          "mac": "ctrl+f10",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "extension.generateGetterSetterForAll",
+          "key": "ctrl+win+shift+d",
+          "mac": "ctrl+f9",
           "when": "editorTextFocus"
         }
       ]
