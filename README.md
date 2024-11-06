@@ -56,10 +56,9 @@
 **结果展示**：
 
 单个属性插入函数：
+![img](https://github.com/qizhiqizhi/WJGSGenerator/blob/master/pic/single.gif)
 
 文件插入函数：
-
-
-
+![img](https://github.com/qizhiqizhi/WJGSGenerator/blob/master/pic/all.gif)
 
 
