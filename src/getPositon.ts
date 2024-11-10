@@ -1,6 +1,6 @@
 import { Picker } from './picker';
 import { TsFileParser } from './tsFileParser';
-import { ClassDeclaration, FunctionDeclaration, MethodDeclaration, Project, ts, PropertyDeclaration, SourceFile, Type } from "ts-morph";
+import { ClassDeclaration, FunctionDeclaration, MethodDeclaration, Project, ts, PropertyDeclaration, SourceFile, Type, Node } from "ts-morph";
 import * as vscode from 'vscode';
 
 interface ClassInfo {
@@ -8,7 +8,9 @@ interface ClassInfo {
   Position: number;
   properties: string[];
   protypes: string[];
+  isWithoutModifiers: boolean[];
 }
+//获取类中最后一个属性的位置
 export function getLastPropertyPosition(document:vscode.TextDocument, selection: vscode.Selection): number {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -30,7 +32,6 @@ export function getLastPropertyPosition(document:vscode.TextDocument, selection:
         const name = ProDecl.getName();
         // 检查属性名是否以#开头，如果是则去掉#
         const trimmedName = name.startsWith('#') ? name.substring(1) : name;
-        
         if (trimmedName === propertyName) {
           result = ProDecl.getEndLineNumber();
           TrueName = classDecl.getName();
@@ -43,6 +44,27 @@ export function getLastPropertyPosition(document:vscode.TextDocument, selection:
     });
     return result;
 }
+//获取类中属性的访问修饰符
+function getlimit(propDecl: PropertyDeclaration): string[]{
+  const modifiers = propDecl.getModifiers().map((modifier: { getKind: () => any; }) => {
+    switch (modifier.getKind()) {
+        case ts.SyntaxKind.PublicKeyword:
+            return "public";
+        case ts.SyntaxKind.PrivateKeyword:
+            return "private";
+        case ts.SyntaxKind.ProtectedKeyword:
+            return "protected";
+        case ts.SyntaxKind.StaticKeyword:
+            return "static";
+        case ts.SyntaxKind.ReadonlyKeyword:
+            return "readonly";
+        default:
+            return ""; // 如果不需要未知修饰符，可以返回空字符串或忽略
+      }
+  }).filter((mod: string) => mod !== ""); // 移除空字符串
+  return modifiers;
+}
+//获取文件中所有属性的基础信息
 export function getPropertyPosition(document:vscode.TextDocument): ClassInfo[] {
   const fileName = document.fileName;
   const sourceFile = TsFileParser.parse(fileName);
@@ -54,16 +76,19 @@ export function getPropertyPosition(document:vscode.TextDocument): ClassInfo[] {
         name: className,
         Position: 0,
         properties: [],
-        protypes: []
+        protypes: [],
+        isWithoutModifiers: []
       };
       classDecl.getProperties().forEach((propDecl, index) => {
         const propName = propDecl.getName();
         const propType = propDecl.getType().getText();
-        console.log(propType);
-        
+        const modifiers = getlimit(propDecl);
+        classInfo.isWithoutModifiers.push(modifiers.length <= 0 ? true : false);
+
         const trimmedName = propName.startsWith('#') ? propName.substring(1) : propName;
         classInfo.properties.push(trimmedName);
         classInfo.protypes.push(propType);
+        
         if (index === classDecl.getProperties().length - 1) {
           classInfo.Position = propDecl.getEndLineNumber();
         }

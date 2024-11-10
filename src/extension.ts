@@ -1,37 +1,46 @@
 import * as vscode from 'vscode';
 import {getLastPropertyPosition, getPropertyPosition } from './getPositon';
 import * as func from './involvedfunc';
+import { Picker } from './picker';
 //单个属性的函数生成
 function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, selection: vscode.Selection): string {
-    const selectedText = document.getText(selection);
-    const propertyName = selectedText.trim();
-    const camelCasePropertyName = func.capitalizeFirstLetter(propertyName);  
-    //拿到属性所在行代码，获得属性的类型（此处受换行影响！）
-    const lineText = document.lineAt(selection.end.line).text;
+    const pickerMember = new Picker(editor);
+    const word = pickerMember.pickCursorWordText();
+    const trimmedName = word.startsWith('#') ? word.substring(1) : word;
+    const classList = getPropertyPosition(document);
+    let protype ="";
+    let acessmodify = false;
+    classList.forEach(classInfo => {
+        classInfo.properties.forEach((prop, index) => {
+            if(prop === word){
+                protype = classInfo.protypes[index];
+                acessmodify = classInfo.isWithoutModifiers[index];
+            }
+        })
+    });
+    const camelCasePropertyName = func.capitalizeFirstLetter(trimmedName);
     const isTS = func.isTypeScript(document);
-    let getterSetter: string;
-    const propertyType = func.getTypeFromComment(lineText);   
-    if (isTS) {  
-        const accessModifier = func.getAccessModifier(lineText);   
-        if (!accessModifier) {
-            vscode.window.showErrorMessage('No access modifier is written for the variable.');
+    let getterSetter: string; 
+    if (isTS) {    
+        if (acessmodify) {
+            vscode.window.showErrorMessage(`No access modifier is written for : ${trimmedName} .`);
             return '';
         }
         getterSetter = `  
-            get ${camelCasePropertyName}(): ${propertyType} {  
-                return this.${propertyName};  
+            get ${camelCasePropertyName}(): ${protype} {  
+                return this.${trimmedName};  
             }  
-            set ${camelCasePropertyName}(value: ${propertyType}) {  
-                this.${propertyName} = value;  
+            set ${camelCasePropertyName}(value: ${protype}) {  
+                this.${trimmedName} = value;  
             }  
         `;  
     } else { 
         getterSetter = `  
             get ${camelCasePropertyName}() {  
-                return this.${propertyName};  
+                return this.${trimmedName};  
             }  
             set ${camelCasePropertyName}(value) {  
-                this.${propertyName} = value;  
+                this.${trimmedName} = value;  
             }  
         `;  
     }  
@@ -55,13 +64,17 @@ function generateGSForAllProperties() {
                 const camelCasePropertyName = func.capitalizeFirstLetter(prop);
                 const positionEnd = new vscode.Position(classInfo.Position, 0);
                 const propertyType = classInfo.protypes[index];
+                if(classInfo.isWithoutModifiers[index] === true){
+                    vscode.window.showErrorMessage(`No access modifier is written for : ${prop} in ${classInfo.name} class.`);
+                    return '';
+                }
                 const getterSetter = `  
-\t\tget ${camelCasePropertyName}(): ${propertyType} {  
-\t\t\treturn this.${prop};  
-\t\t}  
-\t\tset ${camelCasePropertyName}(value: ${propertyType}) {  
-\t\t\tthis.${prop} = value;  
-\t\t}  `;  
+\tget ${camelCasePropertyName}(): ${propertyType} {  
+\t\treturn this.${prop};  
+\t}  
+\tset ${camelCasePropertyName}(value: ${propertyType}) {  
+\t\tthis.${prop} = value;  
+\t}  `;  
                 editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
                 })
             });
@@ -78,12 +91,12 @@ function generateGSForAllProperties() {
                 const camelCasePropertyName = func.capitalizeFirstLetter(prop);
                 const positionEnd = new vscode.Position(classInfo.Position, 0);
                 const getterSetter = `  
-\t\tget ${camelCasePropertyName}() {  
-\t\t\treturn this.${prop};  
-\t\t}  
-\t\tset ${camelCasePropertyName}(value) {  
-\t\t\tthis.${prop} = value;  
-\t\t}  `;  
+\tget ${camelCasePropertyName}() {  
+\t\treturn this.${prop};  
+\t}  
+\tset ${camelCasePropertyName}(value) {  
+\t\tthis.${prop} = value;  
+\t}  `;  
                 editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
                 })
             });
