@@ -4,8 +4,7 @@ import * as func from './involvedfunc';
 import { Picker } from './picker';
 //单个属性的函数生成
 function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, selection: vscode.Selection): string {
-    const pickerMember = new Picker(editor);
-    const word = pickerMember.pickCursorWordText();
+    const word = new Picker(editor).pickCursorWordText();
     const trimmedName = word.startsWith('#') ? word.substring(1) : word;
     const classList = getPropertyPosition(document);
     let protype ="";
@@ -18,7 +17,6 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
             }
         })
     });
-    const camelCasePropertyName = func.capitalizeFirstLetter(trimmedName);
     const isTS = func.isTypeScript(document);
     let getterSetter: string; 
     if (isTS) {    
@@ -26,27 +24,14 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
             vscode.window.showErrorMessage(`No access modifier is written for : ${trimmedName} .`);
             return '';
         }
-        getterSetter = `  
-            get ${camelCasePropertyName}(): ${protype} {  
-                return this.${trimmedName};  
-            }  
-            set ${camelCasePropertyName}(value: ${protype}) {  
-                this.${trimmedName} = value;  
-            }  
-        `;  
+        getterSetter = func.TSgetset(trimmedName, protype);
     } else { 
-        getterSetter = `  
-            get ${camelCasePropertyName}() {  
-                return this.${trimmedName};  
-            }  
-            set ${camelCasePropertyName}(value) {  
-                this.${trimmedName} = value;  
-            }  
-        `;  
+        getterSetter = func.JSgetset(trimmedName);
     }  
     return getterSetter;
 }
-//文件内所有属性的函数生成以及插入
+
+//文件内所有属性的函数生成与插入
 function generateGSForAllProperties() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -61,21 +46,14 @@ function generateGSForAllProperties() {
         editor.edit(editBuilder => {
             classList.forEach(classInfo => {
                 classInfo.properties.forEach((prop, index) => {
-                const camelCasePropertyName = func.capitalizeFirstLetter(prop);
                 const positionEnd = new vscode.Position(classInfo.Position, 0);
                 const propertyType = classInfo.protypes[index];
                 if(classInfo.isWithoutModifiers[index] === true){
                     vscode.window.showErrorMessage(`No access modifier is written for : ${prop} in ${classInfo.name} class.`);
                     return '';
                 }
-                const getterSetter = `  
-\tget ${camelCasePropertyName}(): ${propertyType} {  
-\t\treturn this.${prop};  
-\t}  
-\tset ${camelCasePropertyName}(value: ${propertyType}) {  
-\t\tthis.${prop} = value;  
-\t}  `;  
-                editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
+                const getterSetterCode = func.TSgetset(prop, propertyType);
+                editBuilder.insert(positionEnd, `\n${getterSetterCode}\n`);
                 })
             });
         }).then(success => {
@@ -88,16 +66,9 @@ function generateGSForAllProperties() {
         editor.edit(editBuilder => {
             classList.forEach(classInfo => {
                 classInfo.properties.forEach(prop => {
-                const camelCasePropertyName = func.capitalizeFirstLetter(prop);
                 const positionEnd = new vscode.Position(classInfo.Position, 0);
-                const getterSetter = `  
-\tget ${camelCasePropertyName}() {  
-\t\treturn this.${prop};  
-\t}  
-\tset ${camelCasePropertyName}(value) {  
-\t\tthis.${prop} = value;  
-\t}  `;  
-                editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
+                const getterSetterCode = func.JSgetset(prop);
+                editBuilder.insert(positionEnd, `\n${getterSetterCode}\n`);
                 })
             });
         }).then(success => {
