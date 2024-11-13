@@ -54,10 +54,6 @@ function getlimit(propDecl: PropertyDeclaration): string[]{
             return "private";
         case ts.SyntaxKind.ProtectedKeyword:
             return "protected";
-        case ts.SyntaxKind.StaticKeyword:
-            return "static";
-        case ts.SyntaxKind.ReadonlyKeyword:
-            return "readonly";
         default:
             return ""; // 如果不需要未知修饰符，可以返回空字符串或忽略
       }
@@ -97,4 +93,21 @@ export function getPropertyPosition(document:vscode.TextDocument): ClassInfo[] {
     }
   });
   return classList;
+}
+//判断该函数是否已存在
+export function judgeExi(document:vscode.TextDocument, classname: string, methodname: string): boolean {
+  const fileName = document.fileName;
+  const sourceFile = TsFileParser.parse(fileName);
+  const classDecls = sourceFile.getClasses();
+    for (const classDecl of classDecls) {
+        if (classDecl.getName() === classname) {
+            const methods = classDecl.getMethods();
+            for (const methodDecl of methods) {
+                if (methodDecl.getName() === methodname) {
+                    return true; 
+                }
+            }
+        }
+    }
+  return false;
 }

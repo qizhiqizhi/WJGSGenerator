@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { judgeExi } from './getPositon';
 //首字母大写
 function capitalizeFirstLetter(str:string): string {  
     if (!str || str.length === 0) return str;  
@@ -14,9 +15,13 @@ function getIndentationLevel(lineText:string) {
     const match = lineText.match(/^([\s\t]*)/);  
     return match ? match[0] : '';  
 }  
-// 生成 TS 的get 和 set 的函数
-function TSgetset(prop: string, propertyType: string ) {
+// 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
+function TSgetset(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
+    const name = 'get'+camelCasePropertyName;
+    const judge = judgeExi(document, classname, name);
+    
+    if(judge === true)return '';
     return `
 \tpublic get${camelCasePropertyName}(): ${propertyType} {  
 \t\treturn this.${prop};  
@@ -25,15 +30,18 @@ function TSgetset(prop: string, propertyType: string ) {
 \t\tthis.${prop} = value;  
 \t}  `;
 }
-// 生成 JS 的get 和 set 的函数
-function JSgetset(prop: string) {
+// 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
+function JSgetset(document: vscode.TextDocument, prop: string, classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
+    const name = 'get'+camelCasePropertyName;
+    const judge = judgeExi(document, classname, name);
+    if(judge === true)return '';
     return `
 \tget${camelCasePropertyName}() {  
-\t\treturn this.${prop};  
+\t\t return this.${prop};  
 \t}  
 \tset${camelCasePropertyName}(value) {  
-\t\tthis.${prop} = value;  
+\t\t this.${prop} = value;  
 \t}  `;
 }
 export {capitalizeFirstLetter, isTypeScript, getIndentationLevel,JSgetset, TSgetset}
