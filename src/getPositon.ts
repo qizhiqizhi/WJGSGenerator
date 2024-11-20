@@ -97,13 +97,15 @@ export function getPropertyPosition(document:vscode.TextDocument): ClassInfo[] {
 //判断该函数是否已存在
 export function judgeExi(document:vscode.TextDocument, classname: string, methodname: string): boolean {
   const fileName = document.fileName;
+  const nameget = 'get'+methodname;
+  const nameset = 'set'+methodname;
   const sourceFile = TsFileParser.parse(fileName);
   const classDecls = sourceFile.getClasses();
     for (const classDecl of classDecls) {
         if (classDecl.getName() === classname) {
             const methods = classDecl.getMethods();
             for (const methodDecl of methods) {
-                if (methodDecl.getName() === methodname) {
+                if (methodDecl.getName() === nameget || methodDecl.getName() === nameset) {
                     return true; 
                 }
             }

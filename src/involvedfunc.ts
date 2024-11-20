@@ -3,7 +3,7 @@ import { judgeExi } from './getPositon';
 //首字母大写
 function capitalizeFirstLetter(str:string): string {  
     if (!str || str.length === 0) return str;  
-    return str.charAt(0).toUpperCase() + str.slice(1);  
+    return str.charAt(0).toUpperCase() + str.slice(1);    
 }  
 //判断类型是否为TS
 function isTypeScript(document: vscode.TextDocument): boolean {  
@@ -18,7 +18,7 @@ function getIndentationLevel(lineText:string) {
 // 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
 function TSgetset(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const name = 'get'+camelCasePropertyName;
+    const name = camelCasePropertyName;
     const judge = judgeExi(document, classname, name);
     
     if(judge === true)return '';
@@ -33,7 +33,7 @@ function TSgetset(document: vscode.TextDocument, prop: string, propertyType: str
 // 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
 function JSgetset(document: vscode.TextDocument, prop: string, classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const name = 'get'+camelCasePropertyName;
+    const name = camelCasePropertyName;
     const judge = judgeExi(document, classname, name);
     if(judge === true)return '';
     return `
