@@ -135,12 +135,80 @@ function generateGSForAllProperties() {
     }
     
 }
+//生成选中属性的函数代码
+export async function showSelectGenerate() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        vscode.window.showErrorMessage('No editor is active.');
+        return;
+    }
+    const document = editor.document;
+    const isTS = func.isTypeScript(document);
+    let getterSetter =''; 
+    const classList = getPropertyPosition(document);
+
+    const items: vscode.QuickPickItem[] = classList.map(classInfo => {
+        return classInfo.properties.map(prop => {
+            return {
+              label: `Class: ${classInfo.name} - Prop: ${prop}`,
+              description: `` 
+            };
+          });
+        }).flat();
+ 
+    const selectedItems = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select a class to view its properties',
+        canPickMany: true // 设置为 true 以允许用户多选
+    });
+ 
+  if (selectedItems) {
+    editor.edit(editBuilder => {
+        selectedItems.forEach(item => {
+            const [, className, propName] = item.label.match(/^Class: (.*?) - Prop: (.*)$/)!;
+            const selectedClassName = className.trim();
+            const selectedPropName = propName.trim(); 
+            const selectedClass = classList.find(cls => cls.name === className);
+            if (selectedClass) {
+                const selectedPropIndex = selectedClass.properties.indexOf(propName);
+                const accessModify = selectedClass.isWithoutModifiers[selectedPropIndex];
+                const position = selectedClass.Position; 
+                const positionEnd = new vscode.Position(position, 0);
+                const propType = selectedClass.protypes[selectedPropIndex];
+                // console.log(accessModify, position, propType);
+                if (isTS) {    
+                    if (accessModify) {
+                        vscode.window.showErrorMessage(`No access modifier is written for : ${selectedPropName} .`);
+                        return '';
+                    }
+                    getterSetter = func.TSgetset(document, selectedPropName, propType, selectedClassName);
+                } else { 
+                    getterSetter = func.JSgetset(document, selectedPropName, selectedClassName);
+                }  
+                if(getterSetter == ''){
+                    vscode.window.showErrorMessage(`The function for this attribute already exists : ${selectedPropName} .`);
+                }
+                else editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
+                }
+            })
+        }).then(success => {
+            if (!success) {
+                vscode.window.showErrorMessage('Failed to insert getter and setter methods.');
+            }
+            else{
+                document.save();
+            };
+        }); 
+    }
+}
 // 激活函数
 function activate(context: vscode.ExtensionContext) {
     let disposable = vscode.commands.registerCommand('extension.generateGetterSetter', GSGenerateCommand);
     context.subscriptions.push(disposable);
     let disposableAll = vscode.commands.registerCommand('extension.generateGetterSetterForAll', generateGSForAllProperties);
     context.subscriptions.push(disposableAll);
+    let disposableSelect = vscode.commands.registerCommand('extension.showSelectGenerate', showSelectGenerate);
+    context.subscriptions.push(disposableSelect);
+     
 }
 // 停用函数
 function deactivate() {}

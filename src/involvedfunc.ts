@@ -18,10 +18,21 @@ function getIndentationLevel(lineText:string) {
 // 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
 function TSgetset(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const name = camelCasePropertyName;
-    const judge = judgeExi(document, classname, name);
+    const judge = judgeExi(document, classname, camelCasePropertyName);
     
-    if(judge === true)return '';
+    if(judge === 0)return '';
+    else if(judge === 1) {
+        return ` 
+\tpublic set${camelCasePropertyName}(value: ${propertyType}) {  
+\t\tthis.${prop} = value;  
+\t}  `;
+    }
+    else if(judge === 2) {
+        return `
+\tpublic get${camelCasePropertyName}(): ${propertyType} {  
+\t\treturn this.${prop};  
+\t}  `;
+    }
     return `
 \tpublic get${camelCasePropertyName}(): ${propertyType} {  
 \t\treturn this.${prop};  
@@ -33,9 +44,19 @@ function TSgetset(document: vscode.TextDocument, prop: string, propertyType: str
 // 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
 function JSgetset(document: vscode.TextDocument, prop: string, classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const name = camelCasePropertyName;
-    const judge = judgeExi(document, classname, name);
-    if(judge === true)return '';
+    const judge = judgeExi(document, classname, camelCasePropertyName);
+    if(judge === 0)return '';
+    else if(judge === 2){
+        return `
+\tget${camelCasePropertyName}() {  
+\t\t return this.${prop};  
+\t}  `;}
+    else if(judge === 1){
+        return ` 
+\tset${camelCasePropertyName}(value) {  
+\t\t this.${prop} = value;  
+\t}  `;
+        } 
     return `
 \tget${camelCasePropertyName}() {  
 \t\t return this.${prop};  

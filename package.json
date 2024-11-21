@@ -36,6 +36,11 @@
           "key": "ctrl+win+shift+d",
           "mac": "ctrl+f9",
           "when": "editorTextFocus"
+        },
+        {
+          "key": "ctrl+alt+g", 
+          "command": "extension.showSelectGenerate",
+          "when": "editorTextFocus"  
         }
       ]
   },
