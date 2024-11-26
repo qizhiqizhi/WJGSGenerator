@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { judgeExi } from './getPositon';
+import { ClassAnalyzer } from './getInformation';
+
 //首字母大写
 function capitalizeFirstLetter(str:string): string {  
     if (!str || str.length === 0) return str;  
@@ -18,8 +19,9 @@ function getIndentationLevel(lineText:string) {
 // 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
 function TSgetset(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const judge = judgeExi(document, classname, camelCasePropertyName);
-    
+    const analyzer = new ClassAnalyzer(document);
+    const judge = analyzer.judgeExistence(classname, camelCasePropertyName);
+    //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表get函数已生成
     if(judge === 0)return '';
     else if(judge === 1) {
         return ` 
@@ -44,7 +46,9 @@ function TSgetset(document: vscode.TextDocument, prop: string, propertyType: str
 // 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
 function JSgetset(document: vscode.TextDocument, prop: string, classname:string) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
-    const judge = judgeExi(document, classname, camelCasePropertyName);
+    const analyzer = new ClassAnalyzer(document);
+    const judge = analyzer.judgeExistence(classname, camelCasePropertyName);
+    //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表get函数已生成
     if(judge === 0)return '';
     else if(judge === 2){
         return `
@@ -65,4 +69,19 @@ function JSgetset(document: vscode.TextDocument, prop: string, classname:string)
 \t\t this.${prop} = value;  
 \t}  `;
 }
-export {capitalizeFirstLetter, isTypeScript, getIndentationLevel,JSgetset, TSgetset}
+// 生成属性的get或set函数
+function getsetfinal(document: vscode.TextDocument,isWithoutModifiers:boolean, prop: string, propertyType: string ,classname:string) {
+    const isTS = isTypeScript(document);
+    let getterSetter ='';
+    if (isTS) {    
+        if (isWithoutModifiers) {
+            vscode.window.showErrorMessage(`No access modifier is written for : ${prop} .`);
+            return '-1';
+        }
+        getterSetter = TSgetset(document, prop, propertyType, classname);
+    } else { 
+        getterSetter = JSgetset(document, prop, classname);
+    }  
+    return getterSetter;
+}
+export {capitalizeFirstLetter, isTypeScript, getIndentationLevel,JSgetset, TSgetset, getsetfinal}

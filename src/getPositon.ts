@@ -1,15 +1,7 @@
 import { Picker } from './picker';
 import { TsFileParser } from './tsFileParser';
-import { ClassDeclaration, FunctionDeclaration, MethodDeclaration, Project, ts, PropertyDeclaration, SourceFile, Type, Node } from "ts-morph";
 import * as vscode from 'vscode';
 
-interface ClassInfo {
-  name: string;
-  Position: number;
-  properties: string[];
-  protypes: string[];
-  isWithoutModifiers: boolean[];
-}
 //获取类中最后一个属性的位置
 export function getLastPropertyPosition(document:vscode.TextDocument, selection: vscode.Selection): number {
     const editor = vscode.window.activeTextEditor;
@@ -43,85 +35,4 @@ export function getLastPropertyPosition(document:vscode.TextDocument, selection:
       })
     });
     return result;
-}
-//获取类中属性的访问修饰符
-function getlimit(propDecl: PropertyDeclaration): string[]{
-  const modifiers = propDecl.getModifiers().map((modifier: { getKind: () => any; }) => {
-    switch (modifier.getKind()) {
-        case ts.SyntaxKind.PublicKeyword:
-            return "public";
-        case ts.SyntaxKind.PrivateKeyword:
-            return "private";
-        case ts.SyntaxKind.ProtectedKeyword:
-            return "protected";
-        default:
-            return ""; // 如果不需要未知修饰符，可以返回空字符串或忽略
-      }
-  }).filter((mod: string) => mod !== ""); // 移除空字符串
-  return modifiers;
-}
-//获取文件中所有属性的基础信息
-export function getPropertyPosition(document:vscode.TextDocument): ClassInfo[] {
-  const fileName = document.fileName;
-  const sourceFile = TsFileParser.parse(fileName);
-  const classList: ClassInfo[] = [];
-  sourceFile.getClasses().forEach((classDecl) => {
-    const className = classDecl.getName();
-    if (className) {
-      const classInfo: ClassInfo = {
-        name: className,
-        Position: 0,
-        properties: [],
-        protypes: [],
-        isWithoutModifiers: []
-      };
-      classDecl.getProperties().forEach((propDecl, index) => {
-        const propName = propDecl.getName();
-        const propType = propDecl.getType().getText();
-        const modifiers = getlimit(propDecl);
-        classInfo.isWithoutModifiers.push(modifiers.length <= 0 ? true : false);
-
-        const trimmedName = propName.startsWith('#') ? propName.substring(1) : propName;
-        classInfo.properties.push(trimmedName);
-        classInfo.protypes.push(propType);
-        
-        if (index === classDecl.getProperties().length - 1) {
-          classInfo.Position = propDecl.getEndLineNumber();
-        }
-      });
-      classList.push(classInfo);
-    }
-  });
-  return classList;
-}
-//判断该函数是否已存在
-export function judgeExi(document:vscode.TextDocument, classname: string, methodname: string): number {
-  const fileName = document.fileName;
-  const nameget = 'get'+methodname;
-  const nameset = 'set'+methodname;
-  const sourceFile = TsFileParser.parse(fileName);
-  const classDecls = sourceFile.getClasses();
-  let setflag = 0;
-  let getflag = 0;
-    for (const classDecl of classDecls) {
-        if (classDecl.getName() === classname) {
-            const methods = classDecl.getMethods();
-            for (const methodDecl of methods) {
-              if (methodDecl.getName() === nameget){
-                getflag = 1;
-              }
-              else if (methodDecl.getName() === nameset){
-                setflag = 1;
-              }
-              if (getflag === 1 && setflag === 1) {
-                return 0;
-              }
-            }
-            if (getflag === 1 || setflag === 1) {
-              break;
-          }
-        }
-    }
-    return setflag === 1 ? 2 : getflag === 1 ? 1 : 4;
-
 }
