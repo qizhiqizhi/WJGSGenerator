@@ -5,7 +5,7 @@ import * as func from './involvedfunc';
 import { Picker } from './picker';
 
 //单个属性的函数生成
-function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, selection: vscode.Selection): string {
+function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): string {
     const word = new Picker(editor).pickCursorWordText();
     const trimmedName = word.startsWith('#') ? word.substring(1) : word;
     const analyzer = new ClassAnalyzer(document);
@@ -14,8 +14,8 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
     let classname ="";
     let acessmodify = false;
     classList.forEach(classInfo => {
-        classInfo.properties.forEach((prop, index) => {
-            if(prop === word){
+        classInfo.properties.forEach((prop, index) => {        
+            if(prop === trimmedName){
                 protype = classInfo.propertyTypes[index];
                 classname = classInfo.name;
                 acessmodify = classInfo.isWithoutModifiers[index];
@@ -23,24 +23,12 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument, se
         })
     });
     
-    const isTS = func.isTypeScript(document);
-    let getterSetter =''; 
-    //获得对应的函数代码
-    if (isTS) {    
-        if (acessmodify) {
-            vscode.window.showErrorMessage(`No access modifier is written for : ${trimmedName} .`);
-            return getterSetter;
-        }
-        getterSetter = func.TSgetset(document, trimmedName, protype, classname);
-    } else { 
-        getterSetter = func.JSgetset(document, trimmedName, classname);
-    }  
+    const getterSetterCode = func.getsetfinal(document,acessmodify, trimmedName, protype, classname);
     //判断函数是否已经存在
-    if(getterSetter == ''){
+    if(getterSetterCode == ''){
         vscode.window.showErrorMessage(`The function for this attribute already exists : ${trimmedName} .`);
-        return getterSetter;
     }
-    return getterSetter;
+    return getterSetterCode;
 }
 
 //单个属性的函数插入
@@ -56,13 +44,10 @@ function GSGenerateCommand() {
         vscode.window.showErrorMessage('No selection. Please select a property name.');
         return;
     }
-    const currentLineText = document.lineAt(selection.end.line).text;  
-    // 获取当前行的缩进级别  
-    const indentation = func.getIndentationLevel(currentLineText);
-    const getSetCode = GSGgenerat(editor, document, selection).replace(/^\s*/gm, indentation);
+    const getSetCode = GSGgenerat(editor, document);
     const positionEnd = new vscode.Position(getLastPropertyPosition(document, selection) , 0);
 
-    if(getSetCode !== indentation){
+    if(getSetCode !== '-1' ){
         editor.edit(editBuilder => {
             editBuilder.insert(positionEnd, `\n${getSetCode}\n`);
         }).then(success => {
@@ -110,7 +95,7 @@ function generateGSForAllProperties() {
     });  
 }
 
-//生成选中属性的函数代码
+//生成选中属性的函数代码并插入
 async function SelectGSGenerate() {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -131,11 +116,9 @@ async function SelectGSGenerate() {
         }).flat();
  
     const selectedItems = await vscode.window.showQuickPick(items, {
-        placeHolder: 'Select a class to view its properties',
+        placeHolder: 'Select Attribute to Generate Corresponding Function',
         canPickMany: true // 设置为 true 以允许用户多选
     });
-    let getterSetter =''; 
-    const isTS = func.isTypeScript(document);
     if (selectedItems) {
     editor.edit(editBuilder => {
         selectedItems.forEach(item => {
@@ -144,19 +127,11 @@ async function SelectGSGenerate() {
             if (selectedClass) {
                 const Index = selectedClass.properties.indexOf(propName);
                 const positionEnd = new vscode.Position(selectedClass.position, 0);
-                if (isTS) {    
-                    if (selectedClass.isWithoutModifiers[Index]) {
-                        vscode.window.showErrorMessage(`No access modifier is written for : ${propName.trim()} .`);
-                        return '';
-                    }
-                    getterSetter = func.TSgetset(document, propName.trim(), selectedClass.propertyTypes[Index], className.trim());
-                } else { 
-                    getterSetter = func.JSgetset(document, propName.trim(), className.trim());
-                }  
-                if(getterSetter == ''){
+                const getterSetterCode = func.getsetfinal(document,selectedClass.isWithoutModifiers[Index], propName.trim(), selectedClass.propertyTypes[Index], className.trim());  
+                if(getterSetterCode == ''){
                     vscode.window.showErrorMessage(`The function for this attribute already exists : ${propName.trim()} .`);
                 }
-                else editBuilder.insert(positionEnd, `\n${getterSetter}\n`);
+                else if(getterSetterCode !== '-1')editBuilder.insert(positionEnd, `\n${getterSetterCode}\n`);
                 }
             })
         }).then(success => {

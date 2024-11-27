@@ -70,11 +70,11 @@ function JSgetset(document: vscode.TextDocument, prop: string, classname:string)
 \t}  `;
 }
 // 生成属性的get或set函数
-function getsetfinal(document: vscode.TextDocument,isWithoutModifiers:boolean, prop: string, propertyType: string ,classname:string) {
+function getsetfinal(document: vscode.TextDocument,isWithoutModifier:boolean, prop: string, propertyType: string ,classname:string) {
     const isTS = isTypeScript(document);
     let getterSetter ='';
     if (isTS) {    
-        if (isWithoutModifiers) {
+        if (isWithoutModifier) {
             vscode.window.showErrorMessage(`No access modifier is written for : ${prop} .`);
             return '-1';
         }
