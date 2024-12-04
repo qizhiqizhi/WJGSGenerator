@@ -8,7 +8,7 @@ interface ClassInfo {
   position: number;
   properties: string[];
   propertyTypes: string[];
-  isWithoutModifiers: boolean[];
+  isNonStandard: number[];
   hasSetter: boolean[];
   hasGetter: boolean[];
 }
@@ -48,7 +48,7 @@ export class ClassAnalyzer {
 			position: 0,
 			properties: [],
 			propertyTypes: [],
-			isWithoutModifiers: [],
+			isNonStandard: [],
 			hasSetter: [],
 			hasGetter: []
         };
@@ -57,7 +57,9 @@ export class ClassAnalyzer {
         	const propName = propDecl.getName();
 			const propType = propDecl.getType().getText();
 			const modifiers = this.getModifiers(propDecl);
-			classInfo.isWithoutModifiers.push(modifiers.length <= 0 ? true : false);
+			
+			!propName.startsWith('_') ? classInfo.isNonStandard.push(2) : 0;
+			classInfo.isNonStandard.push(modifiers.length <= 0 ? 1 : 0);
 
 			let trimmedName = propName.startsWith('#') ? propName.substring(1) : propName;
 			trimmedName = propName.startsWith('_') ? propName.substring(1) : propName;

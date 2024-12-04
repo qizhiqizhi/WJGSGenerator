@@ -12,11 +12,10 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): s
     const analyzer = new ClassAnalyzer(document);
     let classList = analyzer.getPropertyInformation();
     let getterSetterCode = '';
-    
     classList.some(classInfo => {
         return classInfo.properties.some((prop, index) => {
             if (prop === trimmedName) {
-                getterSetterCode = func.getsetfinal(document,classInfo.isWithoutModifiers[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                getterSetterCode = func.getsetfinal(document,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
                 return true; // 终止当前类的属性遍历
             }
             return false; // 继续遍历
@@ -45,7 +44,7 @@ function GSGenerateCommand() {
     const getSetCode = GSGgenerat(editor, document);
     const positionEnd = new vscode.Position(getLastPropertyPosition(document, selection) , 0);
 
-    if(getSetCode !== '-1' ){
+    if(getSetCode !== '-1' && getSetCode !== ''){
         editor.edit(editBuilder => {
             editBuilder.insert(positionEnd, `\n${getSetCode}\n`);
         }).then(success => {
@@ -70,7 +69,7 @@ function generateGSForAllProperties() {
     const document = editor.document;
     const analyzer = new ClassAnalyzer(document);
     const classList = analyzer.getPropertyInformation();
-    console.log(classList);
+    // console.log(classList);
     
     editor.edit(editBuilder => {
         //一个一个属性生成并插入
@@ -78,9 +77,9 @@ function generateGSForAllProperties() {
             classInfo.properties.forEach((prop, index) => {
             const positionEnd = new vscode.Position(classInfo.position, 0);
             const propertyType = classInfo.propertyTypes[index];
-            const getterSetterCode = func.getsetfinal(document,classInfo.isWithoutModifiers[index], prop, propertyType, classInfo.name, classInfo.hasGetter[index],classInfo.hasSetter[index]);
+            const getterSetterCode = func.getsetfinal(document,classInfo.isNonStandard[index], prop, propertyType, classInfo.name, classInfo.hasGetter[index],classInfo.hasSetter[index]);
             if(getterSetterCode === ''){
-                vscode.window.showErrorMessage(`The function for this attribute already exists : ${prop} .${classInfo.name}`);
+                vscode.window.showErrorMessage(`The function for this attribute already exists : ${prop} `);
             }
             else if(getterSetterCode !== '-1')editBuilder.insert(positionEnd, `\n${getterSetterCode}\n`);
             })
@@ -127,7 +126,7 @@ async function SelectGSGenerate() {
             if (selectedClass) {
                 const Index = selectedClass.properties.indexOf(propName);
                 const positionEnd = new vscode.Position(selectedClass.position, 0);
-                const getterSetterCode = func.getsetfinal(document,selectedClass.isWithoutModifiers[Index], propName.trim(), selectedClass.propertyTypes[Index], className.trim(),selectedClass.hasGetter[Index],selectedClass.hasSetter[Index]);  
+                const getterSetterCode = func.getsetfinal(document,selectedClass.isNonStandard[Index], propName.trim(), selectedClass.propertyTypes[Index], className.trim(),selectedClass.hasGetter[Index],selectedClass.hasSetter[Index]);  
                 if(getterSetterCode == ''){
                     vscode.window.showErrorMessage(`The function for this attribute already exists : ${propName.trim()} .`);
                 }

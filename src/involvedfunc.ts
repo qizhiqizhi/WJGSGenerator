@@ -74,12 +74,15 @@ function JSgetset(document: vscode.TextDocument, prop: string, classname:string,
 \t}  `;
 }
 // 生成属性的get或set函数
-function getsetfinal(document: vscode.TextDocument,isWithoutModifier:boolean, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
+function getsetfinal(document: vscode.TextDocument,isNonStandard:number, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
     const isTS = isTypeScript(document);
     let getterSetter ='';
     if (isTS) {    
-        if (isWithoutModifier) {
+        if (isNonStandard == 1) {
             vscode.window.showErrorMessage(`No access modifier is written for : ${prop} .`);
+            return '-1';
+        }else if(isNonStandard == 2){
+            vscode.window.showErrorMessage(`Property '${prop}' should start with an underscore.`);
             return '-1';
         }
         getterSetter = TSgetset(document, prop, propertyType, classname, hasGetter, hasSetter);
