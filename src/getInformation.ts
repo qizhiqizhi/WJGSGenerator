@@ -69,10 +69,16 @@ export class ClassAnalyzer {
 			if (index === classDecl.getProperties().length - 1) {
 				classInfo.position = propDecl.getEndLineNumber();
 			}
+
         });
         classDecl.getInstanceMembers().forEach(member => {
-            const propertyIndex = classInfo.properties.findIndex(prop => prop === member.getName());
-			if(propertyIndex!== -1){
+      
+		const propertyIndex = classInfo.properties.findIndex(prop => {
+			// 去掉 prop 可能存在的 # 前缀
+			const cleanProp = prop.startsWith('#') ? prop.slice(1) : prop;
+			return cleanProp === member.getName();
+		  });
+			if(propertyIndex !== -1){
 				if (member.getKind() === SyntaxKind.GetAccessor) {
 					classInfo.hasGetter[propertyIndex] = true;
 				} else if (member.getKind() === SyntaxKind.SetAccessor) {
@@ -83,6 +89,26 @@ export class ClassAnalyzer {
 				}
 			}
         });
+		classDecl.getMethods().forEach(methodDecl => {
+			const methodName = methodDecl.getName();
+			// 检查方法名是否符合 set+prop 或 get+prop 的模式
+			if (methodName.startsWith('set') || methodName.startsWith('get')) {
+				const propPart = methodName.slice(3); // 去掉前缀 "set" 或 "get"
+				const lowerCasePropPart = propPart.charAt(0).toLowerCase() + propPart.slice(1);		
+				const propertyIndex = classInfo.properties.findIndex(prop => {
+					// 去掉 prop 可能存在的 # 前缀
+					const cleanProp = prop.startsWith('#') ? prop.slice(1) : prop;
+					return cleanProp === lowerCasePropPart;
+				  });
+				if (propertyIndex !== -1) {
+					if (methodName.startsWith('set')) {
+						classInfo.hasSetter[propertyIndex]= true;
+					} else {
+						classInfo.hasGetter[propertyIndex] = true;
+					} 
+				}
+			}
+		});
         classList.push(classInfo);
       }
     });

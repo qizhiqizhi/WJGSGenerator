@@ -16,28 +16,44 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.generateGetterSetter",
-        "title": "GSGenerate"
+        "command": "extension.generateGetterSetterES6",
+        "title": "GSGenerateES6"
       },
       {
-        "command": "extension.generateGetterSetterForAll",
-        "title": "GSGenerateAll"
+        "command": "extension.generateGetterSetterForAllES6",
+        "title": "GSGenerateAllES6"
       }
     ],
     "keybindings": [
         {
-          "command": "extension.generateGetterSetter",
+          "command": "extension.generateGetterSetterES6",
           "key": "ctrl+win+shift+s",
           "mac": "ctrl+f10",
           "when": "editorTextFocus"
         },
         {
-          "command": "extension.generateGetterSetterForAll",
+          "command": "extension.generateGetterSetterForAllES6",
           "key": "ctrl+win+shift+d",
           "when": "editorTextFocus"
         },
         {
           "key": "ctrl+alt+g", 
+          "command": "extension.SelectGSGenerateES6",
+          "when": "editorTextFocus"  
+        },
+        {
+          "command": "extension.generateGetterSetter",
+          "key": "ctrl+win+shift+x",
+          "mac": "ctrl+f10",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "extension.generateGetterSetterForAll",
+          "key": "ctrl+win+shift+z",
+          "when": "editorTextFocus"
+        },
+        {
+          "key": "ctrl+alt+h", 
           "command": "extension.SelectGSGenerate",
           "when": "editorTextFocus"  
         }
