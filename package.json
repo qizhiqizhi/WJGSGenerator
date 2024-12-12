@@ -1,8 +1,10 @@
 {
-  "name": "gsgenerator",
-  "displayName": "GSgenerator",
-  "description": "LEAVE BLANK",
+  "name": "TS and JS generate GetSet",
+  "displayName": "Get Set generate ",
+  "description": "Generate TS and JS Getters / Setters",
   "version": "0.0.1",
+	"publisher": "QIZHI",
+	"icon": "",
   "engines": {
     "vscode": "^1.94.0"
   },
@@ -17,11 +19,27 @@
     "commands": [
       {
         "command": "extension.generateGetterSetterES6",
-        "title": "GSGenerateES6"
+        "title": "generateGetterSetterES6"
       },
       {
         "command": "extension.generateGetterSetterForAllES6",
-        "title": "GSGenerateAllES6"
+        "title": "generateGetterSetterForAllES6"
+      },
+      {
+        "command": "extension.SelectGSGenerateES6",
+        "title": "SelectGSGenerateES6"
+      },
+      {
+        "command": "extension.generateGetterSetter",
+        "title": "generateGetterSetter"
+      },
+      {
+        "command": "extension.generateGetterSetterForAll",
+        "title": "generateGetterSetterForAll"
+      },
+      {
+        "command": "extension.SelectGSGenerate",
+        "title": "SelectGSGenerate"
       }
     ],
     "keybindings": [

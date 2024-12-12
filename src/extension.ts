@@ -18,8 +18,6 @@ function GSGgeneratES6(editor: vscode.TextEditor, document: vscode.TextDocument)
     classList.some(classInfo => {
         return classInfo.properties.some((prop, index) => {
             if (prop === trimmedName) {
-                console.log(classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
-                
                 getterSetterCode = func.getsetfinalES6(document,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
                 return true; // 终止当前类的属性遍历
             }
@@ -157,13 +155,18 @@ async function SelectGSGenerateES6() {
 //单个属性的函数生成
 function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): string {
     const word = new Picker(editor).pickCursorWordText();
-    const trimmedName = word.startsWith('#') ? word.substring(1) : word;
+    let trimmedName = word.startsWith('#') ? word.substring(1) : word;
+    trimmedName = trimmedName.startsWith('_') ? trimmedName.substring(1) : trimmedName;
     const analyzer = new ClassAnalyzer(document);
     let classList = analyzer.getPropertyInformation();
     let getterSetterCode = '';
     classList.some(classInfo => {
         return classInfo.properties.some((prop, index) => {
+            // console.log('sdfp',prop,trimmedName);
+            
             if (prop === trimmedName) {
+                // console.log(classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                
                 getterSetterCode = func.getsetfinal(document,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
                 return true; // 终止当前类的属性遍历
             }
@@ -193,7 +196,7 @@ function GSGenerateCommand() {
     const getSetCode = GSGgenerat(editor, document);
     const positionEnd = new vscode.Position(getLastPropertyPosition(document, selection) , 0);
 
-    if(getSetCode !== '-1' ){
+    if(getSetCode !== '-1' && getSetCode !== ''){
         editor.edit(editBuilder => {
             editBuilder.insert(positionEnd, `\n${getSetCode}\n`);
         }).then(success => {

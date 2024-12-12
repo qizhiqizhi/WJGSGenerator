@@ -101,6 +101,8 @@ export class ClassAnalyzer {
 					return cleanProp === lowerCasePropPart;
 				  });
 				if (propertyIndex !== -1) {
+					console.log(methodName,lowerCasePropPart);
+					
 					if (methodName.startsWith('set')) {
 						classInfo.hasSetter[propertyIndex]= true;
 					} else {
@@ -112,6 +114,8 @@ export class ClassAnalyzer {
         classList.push(classInfo);
       }
     });
+	console.log(classList);
+	
     return classList;
   }
 

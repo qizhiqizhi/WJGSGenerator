@@ -198,6 +198,8 @@ function getsetfinal(document: vscode.TextDocument,isNonStandard: number, prop: 
             return '-1';
         }
         getterSetter = TSgetset(document, prop, propertyType, classname, hasGetter, hasSetter);
+        // console.log('getset', getterSetter);
+        
     } else { 
         getterSetter = JSgetset(document, prop, classname, hasGetter, hasSetter);
     }  
