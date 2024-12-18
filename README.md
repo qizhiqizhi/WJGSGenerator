@@ -1,43 +1,43 @@
 # Generate TS and JS Getters / Setters
 
-**现有功能:**
+## Existing functions:
 
-1.针对TS、JS生成传统面向对象方法的set、get函数或ES6存取器的set、get函数
+1.Generate traditional object-oriented set and get methods or ES6 getter and setter functions for TS (TypeScript) and JS (JavaScript).
 
-2.能够识别函数是否重复，避免重复生成函数
+2.Can identify whether functions are duplicated and avoid generating functions repeatedly.
 
-3.能够对修饰符缺失以及'_'缺失的情况进行提示
+3.Can prompt for the absence of modifiers and the absence of the underscore ('_').
 
-4.能够针对单个属性、单个文件（文件内所有类）以及在快速选择框中选择属性生成函数
+4.Can generate functions for a single property, a single file (all classes within the file), and for properties selected in the quick selection box.
 
-**使用:**
+## USE:
 
-(JS使用与TS使用相同，故只展示TS的使用)
+(The usage of JavaScript (JS) is the same as that of TypeScript (TS), so only the usage of TypeScript (TS) will be demonstrated.)
 
-针对传统面向对象写法：
+**For the traditional object-oriented writing method:**
 
-1.单个属性插入函数：选中某个属性使用generateGetterSetter或使用快捷键ctrl+win+shift+x
++ Single property insertion function: Select a property and use generateGetterSetter or use the shortcut key Ctrl + Win + Shift + X.
 
 ![img](./pic/single.gif)
 
-2.文件插入函数：使用generateGetterSetterForAll或使用快捷键ctrl+win+shift+z
++ File insertion function: Use generateGetterSetterForAll or use the shortcut key Ctrl + Win + Shift + Z.
 
 ![img](./pic/all.gif)
 
-3.选中属性生成函数：使用SelectGSGenerate或使用快捷键ctrl+alt+h
++ Select property to generate function: Use SelectGSGenerate or use the shortcut key Ctrl + Alt + H.
 
 ![img](./pic/select.gif)
 
-针对ES6存取器写法：
+**For ES6 accessor syntax:**
 
-4.单个属性插入函数：选中某个属性使用generateGetterSetterES6或使用快捷键ctrl+win+shift+s
++ Single property insertion function: Select a property and use generateGetterSetterES6 or use the shortcut key Ctrl + Win + Shift + S.
 
 ![img](./pic/singleES6.gif)
 
-5.文件插入函数：使用generateGetterSetterForAllES6或使用快捷键ctrl+win+shift+d
++ File insertion function: Use generateGetterSetterForAllES6 or use the shortcut key Ctrl + Win + Shift + D.
 
 ![img](./pic/allES6.gif)
 
-6.选中属性生成函数：使用SelectGSGenerateES6或使用快捷键ctrl+alt+g
++ Select property to generate function: Use SelectGSGenerateES6 or use the shortcut key Ctrl + Alt + G.
 
 ![img](./pic/selectES6.gif)

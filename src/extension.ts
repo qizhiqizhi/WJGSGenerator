@@ -1,24 +1,24 @@
 import * as vscode from 'vscode';
-import { getLastPropertyPosition  } from './getPositon';
 import { ClassAnalyzer } from './getInformation';
 import * as func from './involvedfunc';
-import { Picker } from './picker';
-import { loadEnvFile } from 'process';
+
 
 //单个属性的函数生成
-function GSGgeneratES6(editor: vscode.TextEditor, document: vscode.TextDocument): string {
-    const word = new Picker(editor).pickCursorWordText();
-    console.log('sgr');
+function GSGgeneratES6(editor: vscode.TextEditor, document: vscode.TextDocument): [string, number] {
+    const selection = editor.selection;
+    const word = document.getText(selection);
+    let trimmedName = word.startsWith('_') ? word.substring(1) : word;
     
-    let trimmedName = word.startsWith('#') ? word.substring(1) : word;
-    trimmedName = trimmedName.startsWith('_') ? trimmedName.substring(1) : trimmedName;
-    const analyzer = new ClassAnalyzer(document);
+    const analyzer = new ClassAnalyzer();
     let classList = analyzer.getPropertyInformation();
     let getterSetterCode = '';
+    const isTS = func.isTypeScript(document);
+    let position = 0;
     classList.some(classInfo => {
         return classInfo.properties.some((prop, index) => {
             if (prop === trimmedName) {
-                getterSetterCode = func.getsetfinalES6(document,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                getterSetterCode = func.getsetfinalES6(isTS,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                position = classInfo.position;
                 return true; // 终止当前类的属性遍历
             }
             return false; // 继续遍历
@@ -28,11 +28,12 @@ function GSGgeneratES6(editor: vscode.TextEditor, document: vscode.TextDocument)
     if(getterSetterCode == ''){
         vscode.window.showErrorMessage(`The function for this attribute already exists : ${trimmedName} .`);
     }
-    return getterSetterCode;
+    return [getterSetterCode, position];
 }
 
 //单个属性的函数插入
 function GSGenerateCommandES6() {
+    const start = process.hrtime();
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showErrorMessage('No editor is active.');
@@ -44,8 +45,9 @@ function GSGenerateCommandES6() {
         vscode.window.showErrorMessage('No selection. Please select a property name.');
         return;
     }
-    const getSetCode = GSGgeneratES6(editor, document);
-    const positionEnd = new vscode.Position(getLastPropertyPosition(document, selection) , 0);
+    const [getSetCode, position] = GSGgeneratES6(editor, document);
+    // const getSetCode = GSGgeneratES6(editor, document);
+    const positionEnd = new vscode.Position(position, 0);
 
     if(getSetCode !== '-1' && getSetCode !== ''){
         editor.edit(editBuilder => {
@@ -59,6 +61,9 @@ function GSGenerateCommandES6() {
             };
         });
     }
+    const end = process.hrtime(start);
+    const elapsedTime = (end[0]*1000 + end[1]/1000000).toFixed(3);
+    console.log(`执行代码耗时：${elapsedTime}毫秒`);
      
 }
 //文件内所有属性的函数生成与插入
@@ -71,17 +76,18 @@ function generateGSForAllPropertiesES6() {
         return;
     }
     const document = editor.document;
-    const analyzer = new ClassAnalyzer(document);
+    const analyzer = new ClassAnalyzer();
     const classList = analyzer.getPropertyInformation();
-    // console.log(classList);
-    
+
+    const isTS = func.isTypeScript(document);
     editor.edit(editBuilder => {
         //一个一个属性生成并插入
         classList.forEach(classInfo => {
             classInfo.properties.forEach((prop, index) => {
             const positionEnd = new vscode.Position(classInfo.position, 0);
             const propertyType = classInfo.propertyTypes[index];
-            const getterSetterCode = func.getsetfinalES6(document,classInfo.isNonStandard[index], prop, propertyType, classInfo.name, classInfo.hasGetter[index],classInfo.hasSetter[index]);
+
+            const getterSetterCode = func.getsetfinalES6(isTS,classInfo.isNonStandard[index], prop, propertyType, classInfo.hasGetter[index],classInfo.hasSetter[index]);
             if(getterSetterCode === ''){
                 vscode.window.showErrorMessage(`The function for this attribute already exists : ${prop} `);
             }
@@ -110,9 +116,9 @@ async function SelectGSGenerateES6() {
         return;
     }
     const document = editor.document;
-    const analyzer = new ClassAnalyzer(document);
+    const analyzer = new ClassAnalyzer();
     const classList = analyzer.getPropertyInformation();
-
+    const isTS = func.isTypeScript(document);
     const items: vscode.QuickPickItem[] = classList.map(classInfo => {
         return classInfo.properties.map(prop => {
             return {
@@ -134,7 +140,7 @@ async function SelectGSGenerateES6() {
             if (selectedClass) {
                 const Index = selectedClass.properties.indexOf(propName);
                 const positionEnd = new vscode.Position(selectedClass.position, 0);
-                const getterSetterCode = func.getsetfinalES6(document,selectedClass.isNonStandard[Index], propName.trim(), selectedClass.propertyTypes[Index], className.trim(),selectedClass.hasGetter[Index],selectedClass.hasSetter[Index]);  
+                const getterSetterCode = func.getsetfinalES6(isTS,selectedClass.isNonStandard[Index], propName.trim(), selectedClass.propertyTypes[Index], selectedClass.hasGetter[Index],selectedClass.hasSetter[Index]);  
                 if(getterSetterCode == ''){
                     vscode.window.showErrorMessage(`The function for this attribute already exists : ${propName.trim()} .`);
                 }
@@ -153,21 +159,23 @@ async function SelectGSGenerateES6() {
 }
 
 //单个属性的函数生成
-function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): string {
-    const word = new Picker(editor).pickCursorWordText();
-    let trimmedName = word.startsWith('#') ? word.substring(1) : word;
-    trimmedName = trimmedName.startsWith('_') ? trimmedName.substring(1) : trimmedName;
-    const analyzer = new ClassAnalyzer(document);
+function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): [string, number] {
+    const selection = editor.selection;
+    const word = document.getText(selection);
+    let trimmedName = word.startsWith('_') ? word.substring(1) : word;
+   
+    const analyzer = new ClassAnalyzer();
     let classList = analyzer.getPropertyInformation();
     let getterSetterCode = '';
+    let position = 0;
+    const isTS = func.isTypeScript(document);
     classList.some(classInfo => {
         return classInfo.properties.some((prop, index) => {
-            // console.log('sdfp',prop,trimmedName);
-            
             if (prop === trimmedName) {
                 // console.log(classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
                 
-                getterSetterCode = func.getsetfinal(document,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index], classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                getterSetterCode = func.getsetfinal(isTS,classInfo.isNonStandard[index], trimmedName, classInfo.propertyTypes[index],classInfo.hasGetter[index], classInfo.hasSetter[index]);
+                position = classInfo.position;
                 return true; // 终止当前类的属性遍历
             }
             return false; // 继续遍历
@@ -177,7 +185,7 @@ function GSGgenerat(editor: vscode.TextEditor, document: vscode.TextDocument): s
     if(getterSetterCode == ''){
         vscode.window.showErrorMessage(`The function for this attribute already exists : ${trimmedName} .`);
     }
-    return getterSetterCode;
+    return [getterSetterCode, position];
 }
 
 //单个属性的函数插入
@@ -193,8 +201,8 @@ function GSGenerateCommand() {
         vscode.window.showErrorMessage('No selection. Please select a property name.');
         return;
     }
-    const getSetCode = GSGgenerat(editor, document);
-    const positionEnd = new vscode.Position(getLastPropertyPosition(document, selection) , 0);
+    const [getSetCode, position] = GSGgenerat(editor, document);
+    const positionEnd = new vscode.Position(position, 0);
 
     if(getSetCode !== '-1' && getSetCode !== ''){
         editor.edit(editBuilder => {
@@ -219,15 +227,16 @@ function generateGSForAllProperties() {
         return;
     }
     const document = editor.document;
-    const analyzer = new ClassAnalyzer(document);
+    const analyzer = new ClassAnalyzer();
     const classList = analyzer.getPropertyInformation();
+    const isTS = func.isTypeScript(document);
     editor.edit(editBuilder => {
         //一个一个属性生成并插入
         classList.forEach(classInfo => {
             classInfo.properties.forEach((prop, index) => {
             const positionEnd = new vscode.Position(classInfo.position, 0);
             const propertyType = classInfo.propertyTypes[index];
-            const getterSetterCode = func.getsetfinal(document,classInfo.isNonStandard[index], prop, propertyType, classInfo.name,classInfo.hasGetter[index], classInfo.hasSetter[index]);
+            const getterSetterCode = func.getsetfinal(isTS,classInfo.isNonStandard[index], prop, propertyType, classInfo.hasGetter[index], classInfo.hasSetter[index]);
             if(getterSetterCode === ''){
                 vscode.window.showErrorMessage(`The function for this attribute already exists : ${prop} .${classInfo.name}`);
             }
@@ -252,9 +261,9 @@ async function SelectGSGenerate() {
         return;
     }
     const document = editor.document;
-    const analyzer = new ClassAnalyzer(document);
+    const analyzer = new ClassAnalyzer();
     const classList = analyzer.getPropertyInformation();
-
+    const isTS = func.isTypeScript(document);
     const items: vscode.QuickPickItem[] = classList.map(classInfo => {
         return classInfo.properties.map(prop => {
             return {
@@ -276,7 +285,7 @@ async function SelectGSGenerate() {
             if (selectedClass) {
                 const Index = selectedClass.properties.indexOf(propName);
                 const positionEnd = new vscode.Position(selectedClass.position, 0);
-                const getterSetterCode = func.getsetfinal(document,selectedClass.isNonStandard[Index], propName.trim(), selectedClass.propertyTypes[Index], className.trim(),selectedClass.hasGetter[Index], selectedClass.hasSetter[Index]);  
+                const getterSetterCode = func.getsetfinal(isTS,selectedClass.isNonStandard[Index], propName.trim(), selectedClass.propertyTypes[Index], selectedClass.hasGetter[Index], selectedClass.hasSetter[Index]);  
                 if(getterSetterCode == ''){
                     vscode.window.showErrorMessage(`The function for this attribute already exists : ${propName.trim()} .`);
                 }

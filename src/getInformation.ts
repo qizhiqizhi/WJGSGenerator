@@ -1,23 +1,31 @@
-import { Picker } from './picker';
+
 import { TsFileParser } from './tsFileParser';
-import { ts, PropertyDeclaration, AccessorDeclaration, SyntaxKind } from "ts-morph";
+import { ts, PropertyDeclaration, SyntaxKind } from "ts-morph";
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 
 interface ClassInfo {
-  name: string;
-  position: number;
-  properties: string[];
-  propertyTypes: string[];
-  isNonStandard: number[];
-  hasSetter: boolean[];
-  hasGetter: boolean[];
+	name: string;
+	position: number;
+	properties: string[];
+	propertyTypes: string[];
+	isNonStandard: number[];
+	hasSetter: boolean[];
+	hasGetter: boolean[];
 }
 export class ClassAnalyzer {
-  private document: vscode.TextDocument;
+    private document: vscode.TextDocument;
 
-  constructor(document: vscode.TextDocument) {
-    this.document = document;
-  }
+    constructor() {
+		const editor = vscode.window.activeTextEditor;
+		if (editor) {
+			this.document = editor.document;
+		} else {
+			vscode.window.showErrorMessage('No editor is active.');
+			throw new Error('No active document');
+		}
+	}
+
 
   // 获取类中属性的访问修饰符
   private getModifiers(propDecl: PropertyDeclaration): string[] {
@@ -36,6 +44,7 @@ export class ClassAnalyzer {
 
   // 获取文件中所有属性的基础信息
   public getPropertyInformation(): ClassInfo[] {
+
     const fileName = this.document.fileName;
     const sourceFile = TsFileParser.parse(fileName);
     const classList: ClassInfo[] = [];
@@ -52,6 +61,11 @@ export class ClassAnalyzer {
 			hasSetter: [],
 			hasGetter: []
         };
+		// 创建属性名到索引的映射表
+		const propertyNameToIndexMap = new Map<string, number>();
+		const propertyCount = classDecl.getProperties().length;
+		classInfo.hasSetter = new Array(propertyCount).fill(false);
+		classInfo.hasGetter = new Array(propertyCount).fill(false);
 
         classDecl.getProperties().forEach((propDecl, index) => {
         	const propName = propDecl.getName();
@@ -61,31 +75,25 @@ export class ClassAnalyzer {
 			!propName.startsWith('_') ? classInfo.isNonStandard.push(2) : 0;
 			classInfo.isNonStandard.push(modifiers.length <= 0 ? 1 : 0);
 
-			let trimmedName = propName.startsWith('#') ? propName.substring(1) : propName;
-			trimmedName = propName.startsWith('_') ? propName.substring(1) : propName;
+			let trimmedName = propName.startsWith('_') ? propName.substring(1) : propName;
 			classInfo.properties.push(trimmedName);
+			trimmedName = trimmedName.startsWith('#') ? trimmedName.substring(1) : trimmedName;
 			classInfo.propertyTypes.push(propType);
 
-			if (index === classDecl.getProperties().length - 1) {
+			propertyNameToIndexMap.set(trimmedName, index);
+			if (index === propertyCount - 1) {
 				classInfo.position = propDecl.getEndLineNumber();
 			}
 
         });
+		
         classDecl.getInstanceMembers().forEach(member => {
-      
-		const propertyIndex = classInfo.properties.findIndex(prop => {
-			// 去掉 prop 可能存在的 # 前缀
-			const cleanProp = prop.startsWith('#') ? prop.slice(1) : prop;
-			return cleanProp === member.getName();
-		  });
-			if(propertyIndex !== -1){
+			const propertyIndex = propertyNameToIndexMap.get(member.getName());
+			if(propertyIndex !== -1 && propertyIndex!== undefined){
 				if (member.getKind() === SyntaxKind.GetAccessor) {
 					classInfo.hasGetter[propertyIndex] = true;
 				} else if (member.getKind() === SyntaxKind.SetAccessor) {
 					classInfo.hasSetter[propertyIndex] = true;
-				}else{
-					classInfo.hasGetter[propertyIndex] = false;
-					classInfo.hasSetter[propertyIndex] = false;
 				}
 			}
         });
@@ -94,14 +102,9 @@ export class ClassAnalyzer {
 			// 检查方法名是否符合 set+prop 或 get+prop 的模式
 			if (methodName.startsWith('set') || methodName.startsWith('get')) {
 				const propPart = methodName.slice(3); // 去掉前缀 "set" 或 "get"
-				const lowerCasePropPart = propPart.charAt(0).toLowerCase() + propPart.slice(1);		
-				const propertyIndex = classInfo.properties.findIndex(prop => {
-					// 去掉 prop 可能存在的 # 前缀
-					const cleanProp = prop.startsWith('#') ? prop.slice(1) : prop;
-					return cleanProp === lowerCasePropPart;
-				  });
-				if (propertyIndex !== -1) {
-					console.log(methodName,lowerCasePropPart);
+				const lowerCasePropPart = propPart.charAt(0).toLowerCase() + propPart.slice(1);	
+				const propertyIndex = propertyNameToIndexMap.get(lowerCasePropPart);	
+				if (propertyIndex !== -1 && propertyIndex!== undefined) {
 					
 					if (methodName.startsWith('set')) {
 						classInfo.hasSetter[propertyIndex]= true;
@@ -114,21 +117,9 @@ export class ClassAnalyzer {
         classList.push(classInfo);
       }
     });
-	console.log(classList);
+	// console.log(classList);
 	
     return classList;
   }
 
-  // 判断该函数是否已存在
-    public judgeExistence(className: string, methodName: string, hasGetter:boolean, hasSetter:boolean): number {
-		if (hasGetter && hasSetter) {
-			return 0;
-		} else if (hasGetter) {
-			return 1;
-		} else if (hasSetter) {
-			return 2;
-		} else {
-			return 3;
-		}
-	}
 }

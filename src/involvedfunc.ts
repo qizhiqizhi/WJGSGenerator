@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ClassAnalyzer } from './getInformation';
 
+
 //首字母大写
 function capitalizeFirstLetter(str:string): string {  
     if (!str || str.length === 0) return str;  
@@ -10,18 +11,23 @@ function capitalizeFirstLetter(str:string): string {
 function isTypeScript(document: vscode.TextDocument): boolean {  
     return document.languageId === 'typescript';  
 }
-//获取缩进位置
-function getIndentationLevel(lineText:string) {  
-    // 匹配前导空格或制表符  
-    const match = lineText.match(/^([\s\t]*)/);  
-    return match ? match[0] : '';  
-}  
+// 判断该函数是否已存在
+function judgeExistence(hasGetter:boolean, hasSetter:boolean): number {
+    if (hasGetter && hasSetter) {
+        return 0;
+    } else if (hasGetter) {
+        return 1;
+    } else if (hasSetter) {
+        return 2;
+    } else {
+        return 3;
+    }
+}
 // 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
-function TSgetsetES6(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
-    const camelCasePropertyName = capitalizeFirstLetter(prop);
+function TSgetsetES6(prop: string, propertyType: string , hasGetter:boolean,hasSetter:boolean) {
+    // const camelCasePropertyName = capitalizeFirstLetter(prop);
     prop = prop.startsWith('_') ? prop.substring(1) : prop;
-    const analyzer = new ClassAnalyzer(document);
-    const judge = analyzer.judgeExistence(classname, camelCasePropertyName, hasGetter, hasSetter);
+    const judge = judgeExistence(hasGetter, hasSetter);
     
     //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表get函数已生成
     if(judge === 0)return '';
@@ -62,12 +68,11 @@ function TSgetsetES6(document: vscode.TextDocument, prop: string, propertyType: 
 \t}  `;
 }
 // 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
-function JSgetsetES6(document: vscode.TextDocument, prop: string, classname:string, hasGetter:boolean,hasSetter:boolean) {
-    const analyzer = new ClassAnalyzer(document);
+function JSgetsetES6(prop: string, hasGetter:boolean,hasSetter:boolean) {
     const name = prop.startsWith('#') ? prop.substring(1) : prop;
     const propertyName = prop.startsWith('#') ? prop : `_${name}`;
     // const name = prop.startsWith('#') ? prop.substring(1) : prop;
-    const judge = analyzer.judgeExistence(classname, prop, hasGetter, hasSetter);
+    const judge = judgeExistence(hasGetter, hasSetter);
     //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表set函数已生成
     if(judge === 0)return '';
     else if(judge === 2){
@@ -106,8 +111,7 @@ function JSgetsetES6(document: vscode.TextDocument, prop: string, classname:stri
 \t}  `;
 }
 // 生成属性的get或set函数
-function getsetfinalES6(document: vscode.TextDocument,isNonStandard:number, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
-    const isTS = isTypeScript(document);
+function getsetfinalES6(isTS: boolean,isNonStandard:number, prop: string, propertyType: string , hasGetter:boolean,hasSetter:boolean) {
     let getterSetter ='';
     if (isTS) {    
         if (isNonStandard == 1) {
@@ -117,22 +121,21 @@ function getsetfinalES6(document: vscode.TextDocument,isNonStandard:number, prop
             vscode.window.showErrorMessage(`Property '${prop}' should start with an underscore.`);
             return '-1';
         }
-        getterSetter = TSgetsetES6(document, prop, propertyType, classname, hasGetter, hasSetter);
+        getterSetter = TSgetsetES6(prop, propertyType, hasGetter, hasSetter);
     } else { 
-        getterSetter = JSgetsetES6(document, prop, classname, hasGetter, hasSetter);
+        getterSetter = JSgetsetES6(prop, hasGetter, hasSetter);
     }  
     return getterSetter;
 }
 // 生成 TS 的get 和 set 的函数，同时判断函数是否已存在
-function TSgetset(document: vscode.TextDocument, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
+function TSgetset(prop: string, propertyType: string, hasGetter:boolean,hasSetter:boolean) {
     const camelCasePropertyName = capitalizeFirstLetter(prop);
     prop = prop.startsWith('_') ? prop.substring(1) : prop;
-    const analyzer = new ClassAnalyzer(document);
     
     // const camelCasePropertyName = capitalizeFirstLetter(prop);
     // const analyzer = new ClassAnalyzer(document);
     // const judge = analyzer.judgeExistence(classname, camelCasePropertyName);
-    const judge = analyzer.judgeExistence(classname, camelCasePropertyName, hasGetter, hasSetter);
+    const judge = judgeExistence(hasGetter, hasSetter);
     //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表get函数已生成
     if(judge === 0)return '';
     else if(judge === 1) {
@@ -156,11 +159,10 @@ function TSgetset(document: vscode.TextDocument, prop: string, propertyType: str
 \t}  `;
 }
 // 生成 JS 的get 和 set 的函数，同时判断函数是否已存在
-function JSgetset(document: vscode.TextDocument, prop: string, classname:string, hasGetter:boolean,hasSetter:boolean) {
+function JSgetset(prop: string, hasGetter:boolean,hasSetter:boolean) {
     const name = prop.startsWith('#') ? prop.substring(1) : prop;
     const camelCasePropertyName = capitalizeFirstLetter(name);
-    const analyzer = new ClassAnalyzer(document);
-    const judge = analyzer.judgeExistence(classname, prop, hasGetter, hasSetter);
+    const judge = judgeExistence(hasGetter, hasSetter);
     //返回0代表get、set函数均已生成，返回1代表get函数已生成，返回2代表get函数已生成
     const propertyName = prop.startsWith('#') ? prop : `_${name}`;
 
@@ -186,8 +188,7 @@ function JSgetset(document: vscode.TextDocument, prop: string, classname:string,
 \t}  `;
 }
 // 生成属性的get或set函数
-function getsetfinal(document: vscode.TextDocument,isNonStandard: number, prop: string, propertyType: string ,classname:string, hasGetter:boolean,hasSetter:boolean) {
-    const isTS = isTypeScript(document);
+function getsetfinal(isTS: boolean,isNonStandard: number, prop: string, propertyType: string , hasGetter:boolean,hasSetter:boolean) {
     let getterSetter ='';
     if (isTS) {    
         if (isNonStandard == 1) {
@@ -197,12 +198,12 @@ function getsetfinal(document: vscode.TextDocument,isNonStandard: number, prop: 
             vscode.window.showErrorMessage(`Property '${prop}' should start with an underscore.`);
             return '-1';
         }
-        getterSetter = TSgetset(document, prop, propertyType, classname, hasGetter, hasSetter);
-        // console.log('getset', getterSetter);
+        getterSetter = TSgetset(prop, propertyType, hasGetter, hasSetter);
         
     } else { 
-        getterSetter = JSgetset(document, prop, classname, hasGetter, hasSetter);
+        getterSetter = JSgetset(prop, hasGetter, hasSetter);
     }  
+    
     return getterSetter;
 }
-export {capitalizeFirstLetter, isTypeScript, getIndentationLevel, getsetfinal, getsetfinalES6}
+export {capitalizeFirstLetter, isTypeScript, getsetfinal, getsetfinalES6}
